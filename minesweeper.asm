@@ -1,17 +1,14 @@
-; DISPLAY MINEFIELD ****
-; TOGGLE SPRITES ****
-; PLAYER MOVEMENT ****
-; PLAYER ACTIONS ****
-;  PLAYER MOVEMENT ****
-;  PLAYER DIGGING ****
-;  PLAYER FLAGGING ****
-; WIN-LOSE CONDITIONS ****
-; WIN-LOSE SCREENS ****
-; MENU ****
-; GENERATE MINEFIELD ****
-;  PRNG ****
-;  CALCULATE BOMB COUNTS ****
+; Minesweeper for the DCPU-16
+; 11/25/2025
+; Timothy Powell
+; 148413
 
+; This assignment is my original work for CS 321, created and completed during
+; the Fall 2025 semester.  I have neither copied this work nor had another
+; person or AI do any of my work for me.
+; -- Timothy Powell
+
+; Loop the program
 :mainLoop
    JSR menuLoop
    JSR gameLoop
@@ -19,9 +16,10 @@
    SET PC, mainLoop
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;                         System Functions                         ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;                              System Functions                               ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Alternate whether the default font or custom sprites will display
 :sysToggleSprites
    SET PUSH, A
    SET PUSH, B
@@ -44,6 +42,7 @@
    SET A, POP
    SET PC, POP
 
+; Get keyboard input from the user
 :sysGetKeyboardInput
    SET PUSH, C
    SET PUSH, B
@@ -66,7 +65,7 @@
    SET C, POP
    SET PC, POP
 
-; Initializes the Clock
+; Initialize the clock
 :sysInitializeClock
    SET PUSH, A
    SET PUSH, B
@@ -77,7 +76,7 @@
    SET A, POP
    SET PC, POP
 
-; Returns the current time
+; Return the current time
 :sysGetTime
    SET PUSH, C
    SET A, 1
@@ -86,6 +85,7 @@
    SET C, POP
    SET PC, POP
 
+; Remove all values from the screen
 :sysClearScreen
    SET PUSH, C
    SET C, 0x8000
@@ -98,11 +98,12 @@
    SET PC, POP
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;                          Menu Functions                          ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;                               Menu Functions                                ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Loop until the user starts the game
 :menuLoop
-   JSR sysInitializeClock
+   JSR sysInitializeClock                  
    :menuLoopback
    JSR menuPrintMainMenu
 
@@ -120,6 +121,7 @@
    JSR menuPrintInstructions
    SET PC, menuLoopback
 
+; Print a string to the menu screen
 ; Pass the screen location in the C register
 ; Pass the string pointer in the B register
 ; Pass the style value in the A register
@@ -132,6 +134,7 @@
    SET PC, POP
    SET PC, menuPrintString
 
+; Print the main menu
 :menuPrintMainMenu
    SET PUSH, A
    SET PUSH, B
@@ -141,7 +144,7 @@
 
    SET A, 0xF000
    SET B, datHeader
-   SET C, 0x8000
+   SET C, 0x8009
    JSR menuPrintString
 
    SET X, 0x0000
@@ -174,6 +177,8 @@
    SET A, POP
    SET PC, POP
 
+; Control user input in the menu loop
+; Pass the pressed key through the A register
 :menuControllerHandler
    IFE A, 0x80 ; Up Arrow
    JSR menuMoveCursorUp
@@ -193,19 +198,23 @@
    SET [datQuitGame], 0x0001
    SET PC, POP
 
+; Move the selection up
 :menuMoveCursorUp
    IFN [datMenuOption], 0
    SUB [datMenuOption], 1
    SET PC, POP
 
+; Move the selection down
 :menuMoveCursorDown
    IFN [datMenuOption], 2
    ADD [datMenuOption], 1
    SET PC, POP
 
+; Quit the game (WIP)
 :menuQuitGame
    SET PC, datQuitGame
 
+; Print the instructions for the game
 :menuPrintInstructions
    JSR sysClearScreen
    SET A, 0xF000
@@ -239,13 +248,15 @@
 
    SET PC, POP
 
+; Leave the menu
 :menuQuitMenu
    SET [datQuitMenu], 0x0001
    SET PC, POP
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;                          Game Functions                          ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;                                    Game Functions                                     ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Control gameplay until the user wins or loses
 :gameLoop
    JSR sysGetTime
    XOR [datRandX], A
@@ -267,7 +278,7 @@
    SET PC, gameLose
    SET PC, gameLoopback
 
-; Shows the datMinefield in the screen
+; Show the minefield in the screen
 :gameDisplayMinefield
    SET PUSH, A
    SET PUSH, C
@@ -399,7 +410,8 @@
    SET A, POP
    SET PC, POP
 
-; Requires the A register to hold the pressed key
+; Handle the user's input during gameplay
+; Pass the pressed key through the A register
 :gameControllerHandler
    IFE A, 0x80 ; Up Arrow
    JSR gameMovePlayerUp
@@ -457,7 +469,7 @@
    :gameDigControls
    SET PC, POP
 
-; Moves the Player up one space
+; Move the player up one space
 :gameMovePlayerUp
    IFL [datPlayerLocation], 0x0010
    SET PC, POP
@@ -481,7 +493,7 @@
    SET A, POP
    SET PC, POP
 
-; Moves the Player down one space
+; Move the player down one space
 :gameMovePlayerDown
    IFG [datPlayerLocation], 0x00AF
    SET PC, POP
@@ -505,7 +517,7 @@
    SET A, POP
    SET PC, POP
 
-; Moves the Player left one space
+; Move the player left one space
 :gameMovePlayerLeft
    SET PUSH, A
    SET A, [datPlayerLocation]
@@ -532,7 +544,7 @@
    SET A, POP
    SET PC, POP
 
-; Moves the Player right one space
+; Move the player right one space
 :gameMovePlayerRight
    SET PUSH, A
    SET A, [datPlayerLocation]
@@ -559,10 +571,8 @@
    SET A, POP
    SET PC, POP
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;                            DIGGING                             ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Dig a tile. Send the dig coordinate in the C register.
+; Dig a tile
+; Pass the dig coordinate in the C register
 :gameDig
    SET PUSH, A
    SET PUSH, B
@@ -586,6 +596,7 @@
    SET A, POP
    SET PC, POP
 
+; Dig all the tiles around a blank tile
 :gameDigBlankTile
    JSR gameDigNorth
    JSR gameDigNorthEast
@@ -597,6 +608,7 @@
    JSR gameDigNorthWest
    SET PC, POP
 
+; Check if the north tile can be dug and dig
 :gameDigNorth
    SET PUSH, A
    IFL C, 0x0010
@@ -609,6 +621,7 @@
    SET A, POP
    SET PC, POP
 
+; Check if the northeast tile can be dug and dig
 :gameDigNorthEast
    SET PUSH, A
    IFL C, 0x0010
@@ -625,6 +638,7 @@
    SET A, POP
    SET PC, POP
 
+; Check if the east tile can be dug and dig
 :gameDigEast
    SET PUSH, A
    SET A, C
@@ -639,6 +653,7 @@
    SET A, POP
    SET PC, POP
 
+; Check if the southeast tile can be dug and dig
 :gameDigSouthEast
    SET PUSH, A
    IFG C, 0x00AF
@@ -655,6 +670,7 @@
    SET A, POP
    SET PC, POP
 
+; Check if the south tile can be dug and dig
 :gameDigSouth
    IFG C, 0x00AF
    SET PC, gameExitDigNorth
@@ -665,6 +681,7 @@
    :gameExitDigSouth
    SET PC, POP
 
+; Check if the southwest tile can be dug and dig
 :gameDigSouthWest
    SET PUSH, A
    IFG C, 0x00AF
@@ -681,6 +698,7 @@
    SET A, POP
    SET PC, POP
 
+; Check if the west tile can be dug and dig
 :gameDigWest
    SET PUSH, A
    SET A, C
@@ -695,6 +713,7 @@
    SET A, POP
    SET PC, POP
 
+; Check if the northwest tile can be dug and dig
 :gameDigNorthWest
    SET PUSH, A
    IFL C, 0x0010
@@ -714,7 +733,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;                       Placing Flags                       ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Flag a datTile. Send the gameFlag coordinate in the C register.
+; Flag a tile.
+; Pass the flag coordinate in the C register.
 :gameFlag
    SET PUSH, A
    SET PUSH, B
@@ -730,6 +750,7 @@
    SET A, POP
    SET PC, POP
 
+; Check if the north tile can be flagged and flag
 :gameFlagNorth
    SET PUSH, A
    IFL C, 0x0010
@@ -742,6 +763,7 @@
    SET A, POP
    SET PC, POP
 
+; Check if the northeast tile can be flagged and flag
 :gameFlagNorthEast
    SET PUSH, A
    IFL C, 0x0010
@@ -758,6 +780,7 @@
    SET A, POP
    SET PC, POP
 
+; Check if the east tile can be flagged and flag
 :gameFlagEast
    SET PUSH, A
    SET A, C
@@ -772,6 +795,7 @@
    SET A, POP
    SET PC, POP
 
+; Check if the southeast tile can be flagged and flag
 :gameFlagSouthEast
    SET PUSH, A
    IFG C, 0x00AF
@@ -788,6 +812,7 @@
    SET A, POP
    SET PC, POP
 
+; Check if the south tile can be flagged and flag
 :gameFlagSouth
    IFG C, 0x00AF
    SET PC, gameExitFlagNorth
@@ -798,6 +823,7 @@
    :gameExitFlagSouth
    SET PC, POP
 
+; Check if the southwest tile can be flagged and flag
 :gameFlagSouthWest
    SET PUSH, A
    IFG C, 0x00AF
@@ -814,6 +840,7 @@
    SET A, POP
    SET PC, POP
 
+; Check if the west tile can be flagged and flag
 :gameFlagWest
    SET PUSH, A
    SET A, C
@@ -828,6 +855,7 @@
    SET A, POP
    SET PC, POP
 
+; Check if the northwest tile can be flagged and flag
 :gameFlagNorthWest
    SET PUSH, A
    IFL C, 0x0010
@@ -844,6 +872,7 @@
    SET A, POP
    SET PC, POP
 
+; Generate a fresh minefield for a game
 :gameGenerateMinefield
    SET PUSH, A
    SET PUSH, C
@@ -858,7 +887,7 @@
    ADD C, 0x0001
    IFL C, datEndMinefield
    SET PC, gameRandomBombsLoop
-   SET C, datMinefield   ; Set the player
+   SET C, datMinefield          ; Set the player
    SET [C], 0x0006
    ADD C, 0x0001
    SET [C], 0x0004
@@ -875,7 +904,7 @@
    SET [C], 0x0004
    SUB C, 0x0001
    SET [C], 0x0004
-   SET C, 0x0000          ; Set the counts
+   SET C, 0x0000                ; Set the counts
    SET B, datMinefield
    :gameSetCounts
    SET X, [B]
@@ -896,6 +925,7 @@
    SET A, POP
    SET PC, POP
 
+; Count the number of mines around a tile
 ; Pass the location through the C register
 ; Receive the count through the X register
 :gameMineCount
@@ -1024,6 +1054,7 @@
    SET A, POP
    SET PC, POP
 
+; Resets the minefield to a blank field
 :gameClearField
    SET PUSH, C
    SET C, datMinefield
@@ -1035,6 +1066,7 @@
    SET C, POP
    SET PC, POP
 
+; Trigger if the user reaches the win flag
 :gameWin
    JSR sysClearScreen
    JSR sysToggleSprites
@@ -1056,6 +1088,7 @@
    SET PC, gameWinWait1
    SET PC, POP
 
+; Trigger if the user triggers a mine
 :gameLose
    JSR sysClearScreen
    JSR sysToggleSprites
@@ -1088,11 +1121,13 @@
 ; 0000000000000000
 ; 000wnnnnnnnnfcpb
 
+; The strings to print to the main menu
 :datHeader       DAT "MINESWEEPER", 0
 :datPlayGame     DAT "    PLAY GAME     ", 0
 :datInstructions DAT "   INSTRUCTIONS   ", 0
-:datQuitGame     DAT "    QUIT GAME     ", 0
+:datQuitGame     DAT " QUIT GAME (WIP)  ", 0
 
+; The strings to show the instructions for the game
 :datMoveInstructions
 DAT "MOVING  [arrows]                "
 DAT "                                "
@@ -1128,11 +1163,13 @@ DAT "                                "
 DAT "      [Z]      [X]      [C]     "
 DAT "   SOUTHWEST  SOUTH  SOUTHEAST  ", 0
 
+; The strings for the win-lose screens
 :datWinHeader  DAT "YOU WIN", 0
 :datWinText    DAT "You arrived at the flag", 0
 :datLoseHeader DAT "YOU LOSE", 0
 :datLoseText   DAT "You triggered a mine", 0
 
+; All the data for the minefield
 :datMinefield                                                      ; Row Nos.   Player Location
 DAT 0x0002, 0x0000, 0x0004, 0x000C, 0x0010, 0x0020, 0x0040, 0x0080 ; Row 1A  -- 0x0000 - 0x0007
 DAT 0x0004, 0x0004, 0x0100, 0x0200, 0x0400, 0x0800, 0x0014, 0x0005 ; Row 1B  -- 0x0008 - 0x000F
@@ -1160,7 +1197,7 @@ DAT 0x0004, 0x0004, 0x0004, 0x0004, 0x0004, 0x0004, 0x0004, 0x0004 ; Row 12A -- 
 DAT 0x0004, 0x0004, 0x0004, 0x0004, 0x0004, 0x0004, 0x0014, 0x1004 ; Row 12B -- 0x00B8 - 0x00BF
 :datEndMinefield
 
-; Sprite Characters
+; The characters to print for each tile
 :datBombs0      DAT 0x0720, 0x0720
 :datBombs1      DAT 0x9700, 0x9701
 :datBombs2      DAT 0x2702, 0x2703
@@ -1178,6 +1215,7 @@ DAT 0x0004, 0x0004, 0x0004, 0x0004, 0x0004, 0x0004, 0x0014, 0x1004 ; Row 12B -- 
 :datPlayerGrass DAT 0x0A16, 0x0A17
 :datPlayerTile  DAT 0x0716, 0x0717
 
+; The sprite customizations
 :datCustomSprites
 DAT 0x0000, 0x0044, 0x7E40, 0x0000 ; datBombs1
 DAT 0x0000, 0x4462, 0x524C, 0x0000 ; datBombs2
@@ -1192,6 +1230,7 @@ DAT 0x0000, 0x0402, 0x520C, 0x0000 ; datTileUnknown
 DAT 0x005C, 0x3A76, 0x7E3C, 0x5A00 ; datTileMine
 DAT 0x20FE, 0xFF7B, 0x7FFB, 0xFD20 ; datPlayer
 
+; The program's variables
 :datClockIndex        DAT 0xFFFF
 :datStartScreen       DAT 0x8000
 :datEndScreen         DAT 0x817F
